@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Music Player - No IFrame</title>
+    <title>YouTube Music Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -99,31 +99,48 @@
             gap: 25px;
         }
 
-        .audio-container {
+        .video-container {
+            position: relative;
             width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            text-align: center;
         }
 
-        .audio-visualizer {
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 100px;
-            margin: 15px 0;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 2px;
+            height: 100%;
+            border: none;
         }
 
-        .audio-bar {
-            width: 6px;
-            background: linear-gradient(to top, #ff6b6b, #ffa36c);
-            border-radius: 3px 3px 0 0;
-            transition: height 0.1s ease;
+        .ad-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+        }
+
+        .ad-overlay .ad-skip-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa36c);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 15px;
         }
 
         .controls {
@@ -219,6 +236,10 @@
             border-left: 4px solid #ff6b6b;
         }
 
+        .playlist-item .play-icon {
+            color: #ff6b6b;
+        }
+
         .playlist-item .duration {
             margin-left: auto;
             color: #a0a0c0;
@@ -235,6 +256,16 @@
         .playlist-item.blocked {
             opacity: 0.6;
             background: rgba(255, 0, 0, 0.1);
+        }
+
+        .playlist-item.blocked .duration::after {
+            content: "Blocked";
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
         }
 
         footer {
@@ -322,13 +353,15 @@
             color: #a0a0c0;
         }
 
-        .ad-block-indicator {
-            background: rgba(76, 175, 80, 0.2);
-            padding: 10px 15px;
+        .ad-indicator {
+            background: rgba(255, 193, 7, 0.2);
+            padding: 8px 15px;
             border-radius: 8px;
             margin-top: 10px;
             display: none;
-            color: #4CAF50;
+            color: #ffc107;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         @media (max-width: 600px) {
@@ -383,8 +416,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>YouTube Music Player - No IFrame</h1>
-            <p class="subtitle">Search and play your favorite music without ads</p>
+            <h1>YouTube Music Player</h1>
+            <p class="subtitle">Search and play your favorite music</p>
         </header>
 
         <div class="search-container">
@@ -395,46 +428,50 @@
         </div>
 
         <div class="player-container">
-            <div class="audio-container">
-                <div class="audio-visualizer" id="audioVisualizer">
-                    <!-- Audio bars will be generated here -->
+            <div class="video-container">
+                <div id="player"></div>
+                <div class="ad-overlay" id="adOverlay">
+                    <i class="fas fa-ad" style="font-size: 2rem; color: #ff6b6b; margin-bottom: 10px;"></i>
+                    <p>Ad detected - attempting to skip...</p>
+                    <button class="ad-skip-btn" id="adSkipBtn">
+                        <i class="fas fa-forward"></i> Skip Ad
+                    </button>
                 </div>
-                
-                <div class="error-message" id="errorMessage">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span id="errorText">This video is not available for playback</span>
-                </div>
+            </div>
 
-                <div class="ad-block-indicator" id="adBlockIndicator">
-                    <i class="fas fa-shield-alt"></i>
-                    <span id="adBlockText">Ad-free experience enabled</span>
-                </div>
+            <div class="ad-indicator" id="adIndicator">
+                <i class="fas fa-ad"></i> Ad playing - skip available soon
+            </div>
 
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <div class="time-display">
-                    <span id="currentTime">0:00</span>
-                    <span id="duration">0:00</span>
-                </div>
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorText">This video is not available for playback</span>
+            </div>
 
-                <div class="controls">
-                    <button class="btn btn-sm" id="prevBtn">
-                        <i class="fas fa-step-backward"></i> Prev
-                    </button>
-                    <button class="btn btn-sm" id="skipBackwardBtn">
-                        <i class="fas fa-backward"></i> -10s
-                    </button>
-                    <button class="btn btn-primary" id="playPauseBtn">
-                        <i class="fas fa-play"></i> Play
-                    </button>
-                    <button class="btn btn-sm" id="skipForwardBtn">
-                        <i class="fas fa-forward"></i> +10s
-                    </button>
-                    <button class="btn btn-sm" id="nextBtn">
-                        <i class="fas fa-step-forward"></i> Next
-                    </button>
-                </div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-sm" id="prevBtn">
+                    <i class="fas fa-step-backward"></i> Prev
+                </button>
+                <button class="btn btn-sm" id="skipBackwardBtn">
+                    <i class="fas fa-backward"></i> -10s
+                </button>
+                <button class="btn btn-primary" id="playPauseBtn">
+                    <i class="fas fa-play"></i> Play
+                </button>
+                <button class="btn btn-sm" id="skipForwardBtn">
+                    <i class="fas fa-forward"></i> +10s
+                </button>
+                <button class="btn btn-sm" id="nextBtn">
+                    <i class="fas fa-step-forward"></i> Next
+                </button>
             </div>
 
             <div id="nowPlaying" class="now-playing" style="display: none;">
@@ -459,124 +496,265 @@
         </div>
 
         <footer>
-            <p>YouTube Music Player &copy; 2023 | Using YouTube Data API | No IFrame - No Ads</p>
+            <p>YouTube Music Player &copy; 2023 | Using YouTube API</p>
+            <p style="font-size: 0.7rem; margin-top: 5px; color: #888;">
+                Note: This player attempts to minimize ads but cannot guarantee ad-free playback
+            </p>
         </footer>
     </div>
 
     <script>
         // YouTube API integration
         const API_KEY = 'AIzaSyAMGAR62RNI3Wu9YlKv43aq2-trVi1ZAM0';
+        let player;
         let currentVideoIndex = 0;
         let searchResults = [];
         let blockedVideos = [];
         let isPlaying = false;
         let progressInterval;
-        let audioContext;
-        let analyser;
-        let audioBars = [];
-        let audioSource;
-        
-        // Create audio element for playback
-        const audioPlayer = new Audio();
-        
-        // Initialize audio visualizer
-        function initAudioVisualizer() {
-            // Create audio context for visualizer
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            
-            // Connect audio player to analyser
-            audioSource = audioContext.createMediaElementSource(audioPlayer);
-            audioSource.connect(analyser);
-            analyser.connect(audioContext.destination);
-            
-            // Create visualizer bars
-            const visualizer = document.getElementById('audioVisualizer');
-            visualizer.innerHTML = '';
-            audioBars = [];
-            
-            const bufferLength = analyser.frequencyBinCount;
-            for (let i = 0; i < 50; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'audio-bar';
-                bar.style.height = '5px';
-                visualizer.appendChild(bar);
-                audioBars.push(bar);
-            }
-            
-            // Start visualization
-            visualizeAudio();
-        }
-        
-        function visualizeAudio() {
-            if (!analyser) return;
-            
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            
-            function draw() {
-                requestAnimationFrame(draw);
-                
-                analyser.getByteFrequencyData(dataArray);
-                
-                for (let i = 0; i < audioBars.length; i++) {
-                    const value = dataArray[i * 4];
-                    const height = Math.max(5, value / 2);
-                    audioBars[i].style.height = `${height}px`;
+        let adCheckInterval;
+        let isAdPlaying = false;
+
+        // Enhanced player parameters to minimize ads
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: '',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'iv_load_policy': 3, // Hide annotations
+                    'fs': 0, // Disable fullscreen button
+                    'disablekb': 1, // Disable keyboard controls
+                    'autoplay': 0,
+                    'widget_referrer': 'https://music.example.com' // Fake referrer
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
                 }
-            }
-            
-            draw();
+            });
         }
 
-        // Control functions
-        document.getElementById('playPauseBtn').addEventListener('click', function () {
-            if (isPlaying) {
-                audioPlayer.pause();
-                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play';
-                isPlaying = false;
-                stopProgressTracking();
+        function onPlayerReady(event) {
+            console.log("Player is ready");
+            document.getElementById('progressContainer').addEventListener('click', seekToPosition);
+            document.getElementById('adSkipBtn').addEventListener('click', skipAd);
+            
+            // Start checking for ads
+            startAdDetection();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                playNextVideo();
+            }
+
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause';
+                startProgressTracking();
+                
+                // Hide ad overlay when actual content plays
+                if (!isAdPlaying) {
+                    document.getElementById('adOverlay').style.display = 'none';
+                    document.getElementById('adIndicator').style.display = 'none';
+                }
             } else {
-                if (searchResults.length > 0) {
-                    audioPlayer.play().then(() => {
-                        document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause';
-                        isPlaying = true;
-                        startProgressTracking();
-                        document.getElementById('adBlockIndicator').style.display = 'block';
-                    }).catch(error => {
-                        console.error('Error playing audio:', error);
-                        document.getElementById('errorText').textContent = "Error playing audio. Trying next song...";
-                        document.getElementById('errorMessage').style.display = 'block';
-                        playNextVideo();
+                isPlaying = false;
+                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play';
+                stopProgressTracking();
+            }
+
+            if (event.data === YT.PlayerState.PLAYING) {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+        }
+
+        function onPlayerError(event) {
+            console.error('Player error:', event.data);
+            document.getElementById('errorText').textContent = getErrorMessage(event.data);
+            document.getElementById('errorMessage').style.display = 'block';
+
+            if (searchResults[currentVideoIndex]) {
+                blockedVideos.push(searchResults[currentVideoIndex].id);
+                updatePlaylistUI();
+            }
+
+            setTimeout(playNextVideo, 2000);
+        }
+
+        // Ad detection and skipping mechanisms
+        function startAdDetection() {
+            adCheckInterval = setInterval(() => {
+                if (player && player.getPlayerState) {
+                    const state = player.getPlayerState();
+                    
+                    // Detect ads by checking for unexpected state changes or duration
+                    if (state === YT.PlayerState.PLAYING) {
+                        try {
+                            const duration = player.getDuration();
+                            const currentTime = player.getCurrentTime();
+                            
+                            // Ads are typically short (5-30 seconds)
+                            if (duration > 0 && duration < 60 && currentTime < duration - 2) {
+                                showAdOverlay();
+                                isAdPlaying = true;
+                                
+                                // Try to skip ad when skip becomes available
+                                if (currentTime > 5) { // Most skippable ads allow skipping after 5 seconds
+                                    skipAd();
+                                }
+                            } else {
+                                isAdPlaying = false;
+                            }
+                        } catch (e) {
+                            // Silently handle errors in ad detection
+                            console.log('Ad detection error:', e);
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function showAdOverlay() {
+            document.getElementById('adOverlay').style.display = 'flex';
+            document.getElementById('adIndicator').style.display = 'block';
+        }
+
+        function skipAd() {
+            if (player && player.getDuration) {
+                try {
+                    const duration = player.getDuration();
+                    // Seek to end of ad
+                    player.seekTo(duration, true);
+                    
+                    // If it's a non-skippable ad, try to play next video
+                    setTimeout(() => {
+                        if (isAdPlaying) {
+                            playNextVideo();
+                        }
+                    }, 3000);
+                    
+                    document.getElementById('adOverlay').style.display = 'none';
+                    document.getElementById('adIndicator').style.display = 'none';
+                    isAdPlaying = false;
+                } catch (e) {
+                    console.log('Skip ad error:', e);
+                }
+            }
+        }
+
+        // Enhanced video selection to prefer music videos (which often have fewer ads)
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching YouTube...</div>';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Add "official audio" and "lyrics" to search to find content with fewer ads
+                const searchQuery = `${query} official audio music`;
+                
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&key=${API_KEY}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                if (data.items.length === 0) {
+                    // Fallback to regular search if music category returns no results
+                    const fallbackResponse = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(query + " music")}&type=video&key=${API_KEY}`);
+                    const fallbackData = await fallbackResponse.json();
+                    
+                    if (fallbackData.items.length === 0) {
+                        document.getElementById('playlistItems').innerHTML = '<div class="error">No results found. Try a different search.</div>';
+                        return;
+                    }
+                    processVideoData(fallbackData);
+                } else {
+                    processVideoData(data);
+                }
+            } catch (error) {
+                console.error('Error searching YouTube:', error);
+                document.getElementById('playlistItems').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function processVideoData(data) {
+            const videoIds = data.items.map(item => item.id.videoId).join(',');
+            
+            fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`)
+                .then(detailsResponse => detailsResponse.json())
+                .then(detailsData => {
+                    searchResults = data.items.map(item => {
+                        const videoDetails = detailsData.items.find(detail => detail.id === item.id.videoId);
+                        return {
+                            id: item.id.videoId,
+                            title: item.snippet.title,
+                            thumbnail: item.snippet.thumbnails.medium.url,
+                            channel: item.snippet.channelTitle,
+                            duration: formatDuration(videoDetails ? videoDetails.contentDetails.duration : 'PT0M0S')
+                        };
                     });
+
+                    blockedVideos = [];
+                    renderPlaylist();
+
+                    if (searchResults.length > 0) {
+                        currentVideoIndex = 0;
+                        if (player && player.loadVideoById) {
+                            player.loadVideoById(searchResults[0].id);
+                            updatePlaylistUI();
+                            updateNowPlaying();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching video details:', error);
+                    document.getElementById('playlistItems').innerHTML = `<div class="error">Error loading video details</div>`;
+                });
+        }
+
+        // Rest of the control functions remain the same as your original code
+        document.getElementById('playPauseBtn').addEventListener('click', function () {
+            if (player && player.getPlayerState) {
+                if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    player.pauseVideo();
+                } else {
+                    player.playVideo();
                 }
             }
         });
 
-        document.getElementById('prevBtn').addEventListener('click', function () {
-            playPrevVideo();
-        });
-
-        document.getElementById('nextBtn').addEventListener('click', function () {
-            playNextVideo();
-        });
+        document.getElementById('prevBtn').addEventListener('click', playPrevVideo);
+        document.getElementById('nextBtn').addEventListener('click', playNextVideo);
 
         document.getElementById('skipBackwardBtn').addEventListener('click', function () {
-            audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+            if (player && player.getCurrentTime) {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(Math.max(0, currentTime - 10), true);
+            }
         });
 
         document.getElementById('skipForwardBtn').addEventListener('click', function () {
-            audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 10);
+            if (player && player.getCurrentTime) {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(currentTime + 10, true);
+            }
         });
 
-        // Play the previous video in the playlist
         function playPrevVideo() {
             if (searchResults.length > 0) {
                 let prevIndex = (currentVideoIndex - 1 + searchResults.length) % searchResults.length;
                 let attempts = 0;
 
-                // Skip blocked videos
                 while (attempts < searchResults.length &&
                     blockedVideos.includes(searchResults[prevIndex].id)) {
                     prevIndex = (prevIndex - 1 + searchResults.length) % searchResults.length;
@@ -585,23 +763,18 @@
 
                 if (attempts < searchResults.length) {
                     currentVideoIndex = prevIndex;
-                    loadAndPlayAudio(searchResults[currentVideoIndex].id);
+                    player.loadVideoById(searchResults[currentVideoIndex].id);
                     updatePlaylistUI();
                     updateNowPlaying();
-                } else {
-                    document.getElementById('errorText').textContent = "No playable videos found in the playlist.";
-                    document.getElementById('errorMessage').style.display = 'block';
                 }
             }
         }
 
-        // Play the next video in the playlist
         function playNextVideo() {
             if (searchResults.length > 0) {
                 let nextIndex = (currentVideoIndex + 1) % searchResults.length;
                 let attempts = 0;
 
-                // Skip blocked videos
                 while (attempts < searchResults.length &&
                     blockedVideos.includes(searchResults[nextIndex].id)) {
                     nextIndex = (nextIndex + 1) % searchResults.length;
@@ -610,102 +783,58 @@
 
                 if (attempts < searchResults.length) {
                     currentVideoIndex = nextIndex;
-                    loadAndPlayAudio(searchResults[currentVideoIndex].id);
+                    player.loadVideoById(searchResults[currentVideoIndex].id);
                     updatePlaylistUI();
                     updateNowPlaying();
-                } else {
-                    document.getElementById('errorText').textContent = "No playable videos found in the playlist.";
-                    document.getElementById('errorMessage').style.display = 'block';
                 }
             }
         }
 
-        // Load and play audio from YouTube video
-        function loadAndPlayAudio(videoId) {
-            // In a real implementation, you would use a service to get direct audio URL
-            // For demonstration, we'll simulate this with a delay
-            document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading';
-            document.getElementById('playPauseBtn').disabled = true;
-            
-            // Simulate loading audio
-            setTimeout(() => {
-                // In a real app, you would set audioPlayer.src to the actual audio URL
-                // For now, we'll just simulate successful loading
-                audioPlayer.src = `https://www.youtube.com/watch?v=${videoId}`;
-                
-                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play';
-                document.getElementById('playPauseBtn').disabled = false;
-                document.getElementById('errorMessage').style.display = 'none';
-                
-                // Reset progress
-                document.getElementById('currentTime').textContent = '0:00';
-                document.getElementById('duration').textContent = '0:00';
-                document.getElementById('progressBar').style.width = '0%';
-                
-                // Initialize audio context if not already done
-                if (!audioContext) {
-                    initAudioVisualizer();
-                }
-            }, 1000);
-        }
-
-        // Progress tracking
+        // Progress tracking functions (same as original)
         function startProgressTracking() {
             stopProgressTracking();
             progressInterval = setInterval(updateProgress, 1000);
         }
 
         function stopProgressTracking() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-            }
+            if (progressInterval) clearInterval(progressInterval);
         }
 
         function updateProgress() {
-            if (audioPlayer) {
-                const currentTime = audioPlayer.currentTime;
-                const duration = audioPlayer.duration || 0;
+            if (player && player.getCurrentTime && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
 
                 document.getElementById('currentTime').textContent = formatTime(currentTime);
                 document.getElementById('duration').textContent = formatTime(duration);
 
-                const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                const progress = (currentTime / duration) * 100;
                 document.getElementById('progressBar').style.width = `${progress}%`;
-                
-                // Auto-play next when current ends
-                if (currentTime >= duration - 1 && duration > 0) {
-                    playNextVideo();
-                }
             }
         }
 
         function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
-            
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
 
         function seekToPosition(e) {
-            if (audioPlayer && audioPlayer.duration) {
+            if (player && player.getDuration) {
                 const progressContainer = document.getElementById('progressContainer');
                 const clickPosition = e.offsetX / progressContainer.offsetWidth;
-                const duration = audioPlayer.duration;
+                const duration = player.getDuration();
                 const seekTime = duration * clickPosition;
-                audioPlayer.currentTime = seekTime;
+                player.seekTo(seekTime, true);
             }
         }
 
-        // Search functionality
+        // Search and playlist management (same as original)
         document.getElementById('searchBtn').addEventListener('click', performSearch);
         document.getElementById('searchInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
+            if (e.key === 'Enter') performSearch();
         });
 
-        // Clear playlist
         document.getElementById('clearPlaylist').addEventListener('click', function () {
             searchResults = [];
             blockedVideos = [];
@@ -713,75 +842,17 @@
             document.getElementById('playlistItems').innerHTML = '<div class="loading">Search for music to populate the playlist</div>';
             document.getElementById('nowPlaying').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('adBlockIndicator').style.display = 'none';
-            if (audioPlayer) {
-                audioPlayer.pause();
-            }
+            document.getElementById('adOverlay').style.display = 'none';
+            document.getElementById('adIndicator').style.display = 'none';
+            
+            if (player && player.stopVideo) player.stopVideo();
+            
             stopProgressTracking();
             document.getElementById('currentTime').textContent = '0:00';
             document.getElementById('duration').textContent = '0:00';
             document.getElementById('progressBar').style.width = '0%';
         });
 
-        // Perform search using YouTube Data API
-        async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return;
-
-            document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching YouTube...</div>';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('adBlockIndicator').style.display = 'none';
-
-            try {
-                // Search for videos using YouTube Data API
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(query + " music")}&type=video&key=${API_KEY}`);
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
-
-                if (data.items.length === 0) {
-                    document.getElementById('playlistItems').innerHTML = '<div class="error">No results found. Try a different search.</div>';
-                    return;
-                }
-
-                // Get video details (including duration) for each result
-                const videoIds = data.items.map(item => item.id.videoId).join(',');
-                const detailsResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`);
-                const detailsData = await detailsResponse.json();
-
-                // Map search results with details
-                searchResults = data.items.map(item => {
-                    const videoDetails = detailsData.items.find(detail => detail.id === item.id.videoId);
-                    return {
-                        id: item.id.videoId,
-                        title: item.snippet.title,
-                        thumbnail: item.snippet.thumbnails.medium.url,
-                        channel: item.snippet.channelTitle,
-                        duration: formatDuration(videoDetails ? videoDetails.contentDetails.duration : 'PT0M0S')
-                    };
-                });
-
-                // Reset blocked videos for new search
-                blockedVideos = [];
-
-                renderPlaylist();
-
-                // Load the first result
-                if (searchResults.length > 0) {
-                    currentVideoIndex = 0;
-                    loadAndPlayAudio(searchResults[0].id);
-                    updatePlaylistUI();
-                    updateNowPlaying();
-                }
-            } catch (error) {
-                console.error('Error searching YouTube:', error);
-                document.getElementById('playlistItems').innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
-
-        // Format YouTube duration (PT1H2M10S -> 1:02:10)
         function formatDuration(duration) {
             const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
             if (!match) return 'Unknown';
@@ -799,7 +870,6 @@
             }
         }
 
-        // Render the playlist with search results
         function renderPlaylist() {
             const playlistContainer = document.getElementById('playlistItems');
             playlistContainer.innerHTML = '';
@@ -813,9 +883,7 @@
                 const isBlocked = blockedVideos.includes(video.id);
                 const item = document.createElement('div');
                 item.className = `playlist-item ${isBlocked ? 'blocked' : ''}`;
-                if (index === currentVideoIndex && !isBlocked) {
-                    item.classList.add('active');
-                }
+                if (index === currentVideoIndex && !isBlocked) item.classList.add('active');
 
                 item.innerHTML = `
                     <img src="${video.thumbnail}" alt="${video.title}" class="thumbnail">
@@ -829,9 +897,11 @@
                 if (!isBlocked) {
                     item.addEventListener('click', function () {
                         currentVideoIndex = index;
-                        loadAndPlayAudio(video.id);
-                        updatePlaylistUI();
-                        updateNowPlaying();
+                        if (player && player.loadVideoById) {
+                            player.loadVideoById(video.id);
+                            updatePlaylistUI();
+                            updateNowPlaying();
+                        }
                     });
                 }
 
@@ -839,7 +909,6 @@
             });
         }
 
-        // Update playlist UI to show current track
         function updatePlaylistUI() {
             const items = document.querySelectorAll('.playlist-item');
             items.forEach((item, index) => {
@@ -852,7 +921,6 @@
             });
         }
 
-        // Update the now playing section
         function updateNowPlaying() {
             if (searchResults.length > 0 && currentVideoIndex >= 0) {
                 const currentVideo = searchResults[currentVideoIndex];
@@ -863,20 +931,26 @@
             }
         }
 
-        // Initialize
+        function getErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 2: return "Invalid parameter values were provided.";
+                case 5: return "The requested content cannot be played in an HTML5 player.";
+                case 100: return "The video you requested was not found.";
+                case 101:
+                case 150: return "The owner of this video does not allow it to be played on this website.";
+                default: return "An unknown error occurred while playing this video.";
+            }
+        }
+
+        // Load YouTube API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Initialize with example content
         window.addEventListener('load', function () {
             document.getElementById('searchInput').value = 'lofi study music';
-            document.getElementById('progressContainer').addEventListener('click', seekToPosition);
-            document.getElementById('adBlockIndicator').style.display = 'block';
-            
-            // Initialize audio context when user interacts with page
-            document.addEventListener('click', function initAudio() {
-                if (!audioContext) {
-                    initAudioVisualizer();
-                }
-                document.removeEventListener('click', initAudio);
-            });
-            
             performSearch();
         });
     </script>
