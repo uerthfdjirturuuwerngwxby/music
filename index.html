@@ -104,7 +104,6 @@
             width: 100%;
             height: 0;
             padding-bottom: 56.25%;
-            /* 16:9 aspect ratio */
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
@@ -212,10 +211,6 @@
             border-left: 4px solid #ff6b6b;
         }
 
-        .playlist-item .play-icon {
-            color: #ff6b6b;
-        }
-
         .playlist-item .duration {
             margin-left: auto;
             color: #a0a0c0;
@@ -232,16 +227,6 @@
         .playlist-item.blocked {
             opacity: 0.6;
             background: rgba(255, 0, 0, 0.1);
-        }
-
-        .playlist-item.blocked .duration::after {
-            content: "Blocked";
-            background: #ff6b6b;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            margin-left: 5px;
         }
 
         footer {
@@ -338,6 +323,16 @@
             color: #4CAF50;
         }
 
+        .ad-block-stats {
+            background: rgba(255, 193, 7, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #FFC107;
+            font-size: 0.9rem;
+            display: none;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -367,7 +362,6 @@
             }
         }
 
-        /* Scrollbar styling */
         .playlist::-webkit-scrollbar {
             width: 8px;
         }
@@ -415,6 +409,11 @@
             <div class="ad-block-indicator" id="adBlockIndicator">
                 <i class="fas fa-shield-alt"></i>
                 <span id="adBlockText">Ad blocked successfully</span>
+            </div>
+
+            <div class="ad-block-stats" id="adBlockStats">
+                <i class="fas fa-chart-bar"></i>
+                <span id="adBlockStatsText">Ad blocking statistics</span>
             </div>
 
             <div class="progress-container" id="progressContainer">
@@ -482,6 +481,12 @@
         let adDetectedCount = 0;
         let isAdPlaying = false;
         let lastVideoTime = 0;
+        let adBlockStats = {
+            totalAdsDetected: 0,
+            adsSkipped: 0,
+            adsBlocked: 0,
+            lastAdType: 'None'
+        };
 
         // This function is called by the YouTube API when it's ready
         function onYouTubeIframeAPIReady() {
@@ -498,7 +503,9 @@
                     'fs': 0, // Disable fullscreen button
                     'disablekb': 1, // Disable keyboard controls
                     'enablejsapi': 1,
-                    'origin': window.location.origin
+                    'origin': window.location.origin,
+                    'autoplay': 1,
+                    'mute': 0
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -572,11 +579,11 @@
 
         // Advanced ad blocking functionality
         function startAdMonitoring() {
-            // Check for ads every 100ms for maximum effectiveness
-            adBlockInterval = setInterval(aggressiveAdBlock, 100);
+            // Check for ads every 50ms for maximum effectiveness
+            adBlockInterval = setInterval(comprehensiveAdBlock, 50);
         }
 
-        function aggressiveAdBlock() {
+        function comprehensiveAdBlock() {
             if (!player || !player.getPlayerState) return;
             
             const playerState = player.getPlayerState();
@@ -585,84 +592,70 @@
             
             // Multiple detection methods for ads
             let adDetected = false;
-            let skipMethod = "none";
+            let adType = "unknown";
             
             // Method 1: Check for unskippable ads (state 2 is buffering, which often happens before ads)
             if (playerState === YT.PlayerState.BUFFERING && currentTime === 0 && !isAdPlaying) {
                 adDetected = true;
-                skipMethod = "buffering_detection";
+                adType = "pre-roll";
             }
             
             // Method 2: Check if video is unusually short (many ads are 15-30 seconds)
             if (duration > 0 && duration < 35 && !isAdPlaying) {
                 adDetected = true;
-                skipMethod = "short_duration";
+                adType = "short_duration";
             }
             
             // Method 3: Check if time is not progressing (stuck in ad)
             if (playerState === YT.PlayerState.PLAYING && currentTime === lastVideoTime && lastVideoTime > 0) {
                 adDetected = true;
-                skipMethod = "time_stuck";
+                adType = "stuck_ad";
             }
             
             // Method 4: Check for video title changes that might indicate ads
             if (player.getVideoData && player.getVideoData().title) {
                 const title = player.getVideoData().title.toLowerCase();
-                const adKeywords = ['ad', 'advertisement', 'commercial', 'sponsor', 'promo'];
+                const adKeywords = ['ad', 'advertisement', 'commercial', 'sponsor', 'promo', 'spot'];
                 if (adKeywords.some(keyword => title.includes(keyword)) && !isAdPlaying) {
                     adDetected = true;
-                    skipMethod = "title_detection";
+                    adType = "title_detection";
                 }
             }
             
             // Method 5: Check for player state inconsistencies
             if (playerState === YT.PlayerState.CUED && !isPlaying && !isAdPlaying) {
                 adDetected = true;
-                skipMethod = "state_inconsistency";
+                adType = "state_inconsistency";
             }
             
             // Method 6: Check for unusual playback behavior
             if (playerState === YT.PlayerState.PLAYING && currentTime < 1 && duration < 60) {
                 adDetected = true;
-                skipMethod = "playback_behavior";
+                adType = "playback_behavior";
+            }
+            
+            // Method 7: Detect mid-roll ads by sudden time jumps
+            if (playerState === YT.PlayerState.PLAYING && Math.abs(currentTime - lastVideoTime) > 10 && lastVideoTime > 0) {
+                adDetected = true;
+                adType = "mid-roll";
             }
             
             // If ad is detected, use aggressive methods to remove it
             if (adDetected) {
                 adDetectedCount++;
+                adBlockStats.totalAdsDetected++;
+                adBlockStats.lastAdType = adType;
                 isAdPlaying = true;
-                document.getElementById('adBlockText').textContent = `Ad blocked (${adDetectedCount} total) - Method: ${skipMethod}`;
+                
+                document.getElementById('adBlockText').textContent = `Ad blocked (${adDetectedCount} total) - Type: ${adType}`;
                 document.getElementById('adBlockIndicator').style.display = 'block';
                 
-                console.log(`Ad detected (${skipMethod}), removing...`);
+                updateAdBlockStats();
+                
+                console.log(`Ad detected (${adType}), removing...`);
                 
                 // Use multiple methods to skip the ad
-                
-                // Method 1: Try to skip using the YouTube player API
-                if (player.seekTo && duration) {
-                    player.seekTo(duration, true);
-                }
-                
-                // Method 2: Try to play the video at the end to trigger next
-                if (player.playVideo) {
-                    player.playVideo();
-                }
-                
-                // Method 3: Try to stop and reload the video
-                setTimeout(() => {
-                    if (isAdPlaying && player.stopVideo) {
-                        player.stopVideo();
-                    }
-                }, 200);
-                
-                // Method 4: If all else fails, skip to next video
-                setTimeout(() => {
-                    if (isAdPlaying) {
-                        console.log("Ad still playing, skipping to next video");
-                        playNextVideo();
-                        isAdPlaying = false;
-                    }
-                }, 500);
+                skipAdAggressively(adType);
             } else {
                 isAdPlaying = false;
                 lastVideoTime = currentTime;
@@ -678,6 +671,56 @@
                     }
                 }, 2000);
             }
+        }
+
+        function skipAdAggressively(adType) {
+            // Method 1: Try to skip using the YouTube player API
+            if (player.seekTo && player.getDuration) {
+                const duration = player.getDuration();
+                player.seekTo(duration, true);
+                adBlockStats.adsSkipped++;
+            }
+            
+            // Method 2: Try to play the video at the end to trigger next
+            if (player.playVideo) {
+                player.playVideo();
+            }
+            
+            // Method 3: Try to stop and reload the video
+            setTimeout(() => {
+                if (isAdPlaying && player.stopVideo) {
+                    player.stopVideo();
+                }
+            }, 100);
+            
+            // Method 4: Force load the next video if it's a pre-roll ad
+            if (adType === "pre-roll") {
+                setTimeout(() => {
+                    if (isAdPlaying) {
+                        player.loadVideoById(searchResults[currentVideoIndex].id);
+                        adBlockStats.adsBlocked++;
+                    }
+                }, 200);
+            }
+            
+            // Method 5: If all else fails, skip to next video
+            setTimeout(() => {
+                if (isAdPlaying) {
+                    console.log("Ad still playing, skipping to next video");
+                    playNextVideo();
+                    isAdPlaying = false;
+                    adBlockStats.adsBlocked++;
+                }
+            }, 500);
+        }
+
+        function updateAdBlockStats() {
+            document.getElementById('adBlockStatsText').textContent = 
+                `Ads Detected: ${adBlockStats.totalAdsDetected} | ` +
+                `Skipped: ${adBlockStats.adsSkipped} | ` +
+                `Blocked: ${adBlockStats.adsBlocked} | ` +
+                `Last: ${adBlockStats.lastAdType}`;
+            document.getElementById('adBlockStats').style.display = 'block';
         }
 
         // Control functions
@@ -818,10 +861,17 @@
             blockedVideos = [];
             currentVideoIndex = 0;
             adDetectedCount = 0;
+            adBlockStats = {
+                totalAdsDetected: 0,
+                adsSkipped: 0,
+                adsBlocked: 0,
+                lastAdType: 'None'
+            };
             document.getElementById('playlistItems').innerHTML = '<div class="loading">Search for music to populate the playlist</div>';
             document.getElementById('nowPlaying').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('adBlockIndicator').style.display = 'none';
+            document.getElementById('adBlockStats').style.display = 'none';
             if (player && player.stopVideo) {
                 player.stopVideo();
             }
@@ -839,6 +889,7 @@
             document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching YouTube...</div>';
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('adBlockIndicator').style.display = 'none';
+            document.getElementById('adBlockStats').style.display = 'none';
 
             try {
                 // Search for videos using YouTube Data API
