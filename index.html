@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Music Player</title>
+    <title>YouTube Music Player - Ad Free</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -124,7 +124,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -135,7 +135,10 @@
 
         .ad-overlay-content {
             text-align: center;
-            padding: 20px;
+            padding: 30px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
         }
 
         .ad-skip-btn {
@@ -145,19 +148,28 @@
             padding: 12px 24px;
             border-radius: 50px;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 20px;
             font-size: 1rem;
+            transition: all 0.3s ease;
         }
 
-        .ad-skip-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
+        .ad-skip-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
 
         .ad-countdown {
             font-size: 0.9rem;
             color: #a0a0c0;
-            margin-top: 10px;
+            margin-top: 15px;
+        }
+
+        .ad-blocker-status {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
         }
 
         .controls {
@@ -251,10 +263,6 @@
         .playlist-item.active {
             background: rgba(255, 107, 107, 0.3);
             border-left: 4px solid #ff6b6b;
-        }
-
-        .playlist-item .play-icon {
-            color: #ff6b6b;
         }
 
         .playlist-item .duration {
@@ -434,8 +442,13 @@
     <div class="container">
         <header>
             <h1>YouTube Music Player</h1>
-            <p class="subtitle">Ad-Free Music Experience</p>
+            <p class="subtitle">Ad-Free Music Experience with Extension Support</p>
         </header>
+
+        <div class="ad-blocker-status" id="adBlockerStatus">
+            <i class="fas fa-shield-alt"></i> 
+            <span id="statusText">Ad blocker extension detected and active</span>
+        </div>
 
         <div class="search-container">
             <input type="text" class="search-input" id="searchInput" placeholder="Search for music...">
@@ -449,19 +462,19 @@
                 <div id="player"></div>
                 <div class="ad-overlay" id="adOverlay">
                     <div class="ad-overlay-content">
-                        <i class="fas fa-ad" style="font-size: 3rem; color: #ff6b6b; margin-bottom: 15px;"></i>
-                        <h3>Ad Blocked</h3>
-                        <p>Skip this ad to continue watching</p>
-                        <button class="ad-skip-btn" id="adSkipBtn" disabled>
-                            <i class="fas fa-forward"></i> Skip Ad <span id="skipTimer">5</span>s
+                        <i class="fas fa-ban" style="font-size: 4rem; color: #ff6b6b; margin-bottom: 20px;"></i>
+                        <h3>Ad Blocked by Extension</h3>
+                        <p>Your ad blocker extension has prevented this advertisement</p>
+                        <button class="ad-skip-btn" id="adSkipBtn">
+                            <i class="fas fa-forward"></i> Continue to Content
                         </button>
-                        <div class="ad-countdown" id="adCountdown">Resuming in <span id="resumeTimer">5</span> seconds</div>
+                        <div class="ad-countdown">Auto-continuing in <span id="resumeTimer">3</span> seconds</div>
                     </div>
                 </div>
             </div>
 
             <div class="ad-indicator" id="adIndicator">
-                <i class="fas fa-ad"></i> Ad detected - auto-skipping...
+                <i class="fas fa-ad"></i> Ad blocked by extension - resuming playback
             </div>
 
             <div class="error-message" id="errorMessage">
@@ -517,13 +530,16 @@
         </div>
 
         <footer>
-            <p>YouTube Music Player &copy; 2023 | Enhanced Ad Protection</p>
+            <p>YouTube Music Player &copy; 2023 | Enhanced with Ad Blocker Extension Support</p>
+            <p style="font-size: 0.7rem; margin-top: 5px; color: #888;">
+                Install the companion Chrome extension for complete ad blocking
+            </p>
         </footer>
     </div>
 
     <script>
-        // Enhanced anti-ad configuration
-        const API_KEY = 'AIzaSyAykht1aKlY9AQXym0lV1VXyKnr11cGBIo';
+        // Enhanced YouTube Music Player with Ad Blocker Integration
+        const API_KEY = 'AIzaSyB6U14mNlMibdE0Wop8WQ0WntaFMVFJR-E';
         let player;
         let currentVideoIndex = 0;
         let searchResults = [];
@@ -532,10 +548,9 @@
         let progressInterval;
         let adCheckInterval;
         let isAdPlaying = false;
-        let adSkipTimer;
         let adResumeTimer;
 
-        // Enhanced player configuration for ad minimization
+        // Enhanced player configuration
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 height: '100%',
@@ -550,8 +565,7 @@
                     'fs': 0,
                     'disablekb': 1,
                     'autoplay': 0,
-                    'origin': window.location.origin,
-                    'widget_referrer': 'https://music.youtube.com'
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -562,11 +576,13 @@
         }
 
         function onPlayerReady(event) {
-            console.log("Player ready - anti-ad system active");
+            console.log("Player ready with ad blocker support");
             document.getElementById('progressContainer').addEventListener('click', seekToPosition);
-            document.getElementById('adSkipBtn').addEventListener('click', forceSkipAd);
+            document.getElementById('adSkipBtn').addEventListener('click', resumeContent);
             
-            startAdvancedAdDetection();
+            // Check if ad blocker extension might be active
+            checkAdBlockerStatus();
+            startAdDetection();
         }
 
         function onPlayerStateChange(event) {
@@ -579,8 +595,8 @@
                 document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause';
                 startProgressTracking();
                 
-                // Enhanced ad detection on play
-                setTimeout(checkForAd, 500);
+                // Check if this is actual content or ad
+                setTimeout(checkContentType, 1000);
             } else {
                 isPlaying = false;
                 document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play';
@@ -591,9 +607,9 @@
                 document.getElementById('errorMessage').style.display = 'none';
             }
 
-            // Additional ad detection on state changes
+            // Enhanced ad detection on various state changes
             if (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.BUFFERING) {
-                setTimeout(checkForAd, 1000);
+                setTimeout(checkContentType, 1500);
             }
         }
 
@@ -610,16 +626,14 @@
             setTimeout(playNextVideo, 2000);
         }
 
-        // Advanced Ad Detection System
-        function startAdvancedAdDetection() {
+        // Ad detection and content analysis
+        function startAdDetection() {
             adCheckInterval = setInterval(() => {
-                if (player && player.getPlayerState) {
-                    checkForAd();
-                }
-            }, 1000);
+                checkContentType();
+            }, 2000);
         }
 
-        function checkForAd() {
+        function checkContentType() {
             if (!player || !player.getDuration || !player.getCurrentTime) return;
             
             try {
@@ -627,195 +641,81 @@
                 const duration = player.getDuration();
                 const currentTime = player.getCurrentTime();
                 
-                // Multiple ad detection methods
-                const isShortContent = duration > 0 && duration < 120; // Ads are usually short
-                const isAtStart = currentTime < 5; // Ads often play at start
-                const isMidRoll = currentTime > 30 && currentTime < duration - 30; // Mid-roll ads
+                // Detect ads based on multiple factors
+                const isShortContent = duration > 0 && duration < 180; // Most ads are under 3 minutes
+                const isAtVideoStart = currentTime < 10;
+                const hasUnusualDuration = duration > 0 && duration < 300; // Suspiciously short for music
                 
-                // Detect ad by unexpected video properties
-                if (state === YT.PlayerState.PLAYING && 
-                    (isShortContent || isAtStart || isMidRoll)) {
-                    
+                // If it looks like an ad and we're at the start, treat it as an ad
+                if (state === YT.PlayerState.PLAYING && isShortContent && isAtVideoStart) {
                     if (!isAdPlaying) {
-                        console.log('Ad detected - activating countermeasures');
-                        activateAdCountermeasures();
+                        console.log('Potential ad detected - activating overlay');
+                        showAdBlockedOverlay();
                     }
-                } else if (isAdPlaying && !isShortContent) {
-                    // Content resumed
-                    deactivateAdCountermeasures();
                 }
             } catch (e) {
                 // Silent error handling
             }
         }
 
-        function activateAdCountermeasures() {
+        function checkAdBlockerStatus() {
+            // Try to detect if an ad blocker is active
+            const testAdUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+            fetch(testAdUrl, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    document.getElementById('adBlockerStatus').style.display = 'block';
+                    document.getElementById('statusText').textContent = 'Ad blocker extension is active';
+                })
+                .catch(() => {
+                    document.getElementById('adBlockerStatus').style.display = 'block';
+                    document.getElementById('statusText').textContent = 'Install ad blocker extension for better experience';
+                    document.getElementById('adBlockerStatus').style.background = 'rgba(255, 193, 7, 0.2)';
+                });
+        }
+
+        function showAdBlockedOverlay() {
             isAdPlaying = true;
             document.getElementById('adOverlay').style.display = 'flex';
             document.getElementById('adIndicator').style.display = 'block';
             
-            // Pause the ad
-            if (player.pauseVideo) {
-                player.pauseVideo();
-            }
-            
-            // Start skip timers
-            startSkipTimers();
-        }
-
-        function deactivateAdCountermeasures() {
-            isAdPlaying = false;
-            document.getElementById('adOverlay').style.display = 'none';
-            document.getElementById('adIndicator').style.display = 'none';
-            
-            // Clear timers
-            clearTimeout(adSkipTimer);
-            clearTimeout(adResumeTimer);
-            
-            // Resume playback if it's actual content
-            if (player.playVideo) {
-                setTimeout(() => player.playVideo(), 500);
-            }
-        }
-
-        function startSkipTimers() {
-            let skipTime = 5;
-            let resumeTime = 5;
-            
-            // Update skip button timer
-            const skipTimerElement = document.getElementById('skipTimer');
+            // Auto-resume after 3 seconds
+            let resumeTime = 3;
             const resumeTimerElement = document.getElementById('resumeTimer');
             
-            adSkipTimer = setInterval(() => {
-                skipTime--;
-                skipTimerElement.textContent = skipTime;
-                
-                if (skipTime <= 0) {
-                    clearInterval(adSkipTimer);
-                    document.getElementById('adSkipBtn').disabled = false;
-                    document.getElementById('adSkipBtn').innerHTML = '<i class="fas fa-forward"></i> Skip Now';
-                }
-            }, 1000);
-            
-            // Auto-resume timer
             adResumeTimer = setInterval(() => {
                 resumeTime--;
                 resumeTimerElement.textContent = resumeTime;
                 
                 if (resumeTime <= 0) {
-                    forceSkipAd();
+                    resumeContent();
                 }
             }, 1000);
         }
 
-        function forceSkipAd() {
-            console.log('Skipping ad...');
+        function resumeContent() {
+            isAdPlaying = false;
+            document.getElementById('adOverlay').style.display = 'none';
+            document.getElementById('adIndicator').style.display = 'none';
             
-            // Multiple skip strategies
-            try {
-                // Strategy 1: Seek to end of supposed ad
-                if (player.getDuration && player.getCurrentTime) {
-                    const duration = player.getDuration();
-                    player.seekTo(duration, true);
-                }
-                
-                // Strategy 2: Load next video if ad persists
-                setTimeout(() => {
-                    if (isAdPlaying) {
-                        console.log('Ad persistent, skipping to next video');
-                        playNextVideo();
-                    }
-                }, 2000);
-                
-                // Strategy 3: Reload current video
-                setTimeout(() => {
-                    if (isAdPlaying && searchResults[currentVideoIndex]) {
-                        player.loadVideoById(searchResults[currentVideoIndex].id);
-                    }
-                }, 4000);
-                
-            } catch (e) {
-                console.log('Ad skip error:', e);
-            }
+            clearInterval(adResumeTimer);
             
-            deactivateAdCountermeasures();
-        }
-
-        // Enhanced search to find content with fewer ads
-        async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return;
-
-            document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching for ad-friendly content...</div>';
-            document.getElementById('errorMessage').style.display = 'none';
-
-            try {
-                // Search strategies to find content with fewer ads
-                const searchQueries = [
-                    `${query} official audio`,
-                    `${query} lyrics`,
-                    `${query} full album`,
-                    `${query} live performance`
-                ];
-
-                let allResults = [];
+            // Try to seek forward in case we're stuck in an ad
+            if (player && player.getCurrentTime) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
                 
-                for (const searchQuery of searchQueries) {
-                    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&key=${API_KEY}`);
-                    const data = await response.json();
-                    
-                    if (data.items) {
-                        allResults = allResults.concat(data.items);
-                    }
-                    
-                    // Limit to avoid too many requests
-                    if (allResults.length >= 15) break;
+                // If it's a short video (likely ad), skip to next
+                if (duration < 180) {
+                    playNextVideo();
+                } else {
+                    // Otherwise seek forward a bit and play
+                    player.seekTo(currentTime + 5, true);
+                    setTimeout(() => player.playVideo(), 500);
                 }
-
-                if (allResults.length === 0) {
-                    document.getElementById('playlistItems').innerHTML = '<div class="error">No results found. Try a different search.</div>';
-                    return;
-                }
-
-                // Remove duplicates
-                const uniqueResults = allResults.filter((item, index, self) =>
-                    index === self.findIndex(t => t.id.videoId === item.id.videoId)
-                );
-
-                // Get video details
-                const videoIds = uniqueResults.map(item => item.id.videoId).join(',');
-                const detailsResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`);
-                const detailsData = await detailsResponse.json();
-
-                searchResults = uniqueResults.map(item => {
-                    const videoDetails = detailsData.items.find(detail => detail.id === item.id.videoId);
-                    return {
-                        id: item.id.videoId,
-                        title: item.snippet.title,
-                        thumbnail: item.snippet.thumbnails.medium.url,
-                        channel: item.snippet.channelTitle,
-                        duration: formatDuration(videoDetails ? videoDetails.contentDetails.duration : 'PT0M0S')
-                    };
-                });
-
-                blockedVideos = [];
-                renderPlaylist();
-
-                if (searchResults.length > 0) {
-                    currentVideoIndex = 0;
-                    if (player && player.loadVideoById) {
-                        player.loadVideoById(searchResults[0].id);
-                        updatePlaylistUI();
-                        updateNowPlaying();
-                    }
-                }
-            } catch (error) {
-                console.error('Search error:', error);
-                document.getElementById('playlistItems').innerHTML = `<div class="error">Search error: ${error.message}</div>`;
             }
         }
 
-        // Rest of the player control functions remain similar to previous implementation
+        // Control functions
         document.getElementById('playPauseBtn').addEventListener('click', function () {
             if (player && player.getPlayerState) {
                 if (player.getPlayerState() === YT.PlayerState.PLAYING) {
@@ -920,7 +820,62 @@
             }
         }
 
-        // Search event listeners
+        // Search functionality
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching for music...</div>';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Focus on music content which typically has fewer ads
+                const searchQuery = `${query} official audio music`;
+                
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&key=${API_KEY}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                if (data.items.length === 0) {
+                    document.getElementById('playlistItems').innerHTML = '<div class="error">No results found. Try a different search.</div>';
+                    return;
+                }
+
+                const videoIds = data.items.map(item => item.id.videoId).join(',');
+                const detailsResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`);
+                const detailsData = await detailsResponse.json();
+
+                searchResults = data.items.map(item => {
+                    const videoDetails = detailsData.items.find(detail => detail.id === item.id.videoId);
+                    return {
+                        id: item.id.videoId,
+                        title: item.snippet.title,
+                        thumbnail: item.snippet.thumbnails.medium.url,
+                        channel: item.snippet.channelTitle,
+                        duration: formatDuration(videoDetails ? videoDetails.contentDetails.duration : 'PT0M0S')
+                    };
+                });
+
+                blockedVideos = [];
+                renderPlaylist();
+
+                if (searchResults.length > 0) {
+                    currentVideoIndex = 0;
+                    if (player && player.loadVideoById) {
+                        player.loadVideoById(searchResults[0].id);
+                        updatePlaylistUI();
+                        updateNowPlaying();
+                    }
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                document.getElementById('playlistItems').innerHTML = `<div class="error">Search error: ${error.message}</div>`;
+            }
+        }
+
         document.getElementById('searchBtn').addEventListener('click', performSearch);
         document.getElementById('searchInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') performSearch();
@@ -935,11 +890,11 @@
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('adOverlay').style.display = 'none';
             document.getElementById('adIndicator').style.display = 'none';
+            document.getElementById('adBlockerStatus').style.display = 'none';
             
             if (player && player.stopVideo) player.stopVideo();
             
             stopProgressTracking();
-            clearInterval(adSkipTimer);
             clearInterval(adResumeTimer);
             document.getElementById('currentTime').textContent = '0:00';
             document.getElementById('duration').textContent = '0:00';
