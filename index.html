@@ -53,16 +53,6 @@
             font-size: 1rem;
         }
 
-        .ad-protection-status {
-            background: rgba(76, 175, 80, 0.3);
-            border-left: 4px solid #4caf50;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            color: #a0ffa0;
-        }
-
         .search-container {
             display: flex;
             margin-bottom: 20px;
@@ -127,36 +117,6 @@
             width: 100%;
             height: 100%;
             border: none;
-        }
-
-        .ad-block-overlay {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .ad-detection-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 193, 7, 0.9);
-            color: black;
-            padding: 15px 25px;
-            border-radius: 15px;
-            text-align: center;
-            display: none;
-            z-index: 1001;
-            max-width: 80%;
         }
 
         .controls {
@@ -369,6 +329,15 @@
             color: #a0a0c0;
         }
 
+        .ad-block-indicator {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            color: #4CAF50;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -422,14 +391,9 @@
 <body>
     <div class="container">
         <header>
-            <h1>YouTube Music Player</h1>
-            <p class="subtitle">Search and play your favorite music - Ad Free</p>
+            <h1>YouTube Music Player - Ad Free</h1>
+            <p class="subtitle">Search and play your favorite music without interruptions</p>
         </header>
-
-        <div class="ad-protection-status">
-            <i class="fas fa-shield-alt"></i>
-            <strong>AGGRESSIVE AD BLOCKING ACTIVE:</strong> Continuous monitoring every 500ms
-        </div>
 
         <div class="search-container">
             <input type="text" class="search-input" id="searchInput" placeholder="Search for music...">
@@ -441,19 +405,16 @@
         <div class="player-container">
             <div class="video-container">
                 <div id="player"></div>
-                <div class="ad-block-overlay">
-                    <i class="fas fa-shield-alt"></i> ADS: 100% BLOCKED
-                </div>
-                <div class="ad-detection-overlay" id="adDetectionOverlay">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h4>AD DETECTED & BLOCKED</h4>
-                    <p>Video continues playing normally</p>
-                </div>
             </div>
 
             <div class="error-message" id="errorMessage">
                 <i class="fas fa-exclamation-triangle"></i>
                 <span id="errorText">This video is not available for playback</span>
+            </div>
+
+            <div class="ad-block-indicator" id="adBlockIndicator">
+                <i class="fas fa-shield-alt"></i>
+                <span id="adBlockText">Ad blocked successfully</span>
             </div>
 
             <div class="progress-container" id="progressContainer">
@@ -504,7 +465,7 @@
         </div>
 
         <footer>
-            <p>YouTube Music Player &copy; 2023 | Ad-Free Experience</p>
+            <p>YouTube Music Player &copy; 2023 | Using YouTube API | Ad-Free Experience</p>
         </footer>
     </div>
 
@@ -518,136 +479,8 @@
         let isPlaying = false;
         let progressInterval;
         let adBlockInterval;
-
-        // Aggressive ad-blocking configuration
-        const blockedDomains = [
-            'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
-            'ads.youtube.com', 'googleads.g.doubleclick.net', 'pagead2.googlesyndication.com',
-            'adservice.google.com', 'youtube.com/api/stats/ads'
-        ];
-
-        // Initialize aggressive ad blocking
-        function initializeAdBlocking() {
-            // Block fetch requests to ad domains
-            const originalFetch = window.fetch;
-            window.fetch = function(...args) {
-                const url = args[0];
-                if (typeof url === 'string' && blockedDomains.some(domain => url.includes(domain))) {
-                    console.log('🚫 Blocked ad request:', url);
-                    showAdDetection();
-                    return Promise.reject(new Error('Ad request blocked'));
-                }
-                return originalFetch.apply(this, args);
-            };
-
-            // Block XMLHttpRequest to ad domains
-            const originalXHROpen = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function(method, url) {
-                if (typeof url === 'string' && blockedDomains.some(domain => url.includes(domain))) {
-                    console.log('🚫 Blocked XHR ad request:', url);
-                    showAdDetection();
-                    return;
-                }
-                return originalXHROpen.apply(this, arguments);
-            };
-
-            // Start continuous ad monitoring
-            startContinuousAdMonitoring();
-        }
-
-        // Continuous ad monitoring every 500ms
-        function startContinuousAdMonitoring() {
-            if (adBlockInterval) clearInterval(adBlockInterval);
-            
-            adBlockInterval = setInterval(() => {
-                blockAdElements();
-                monitorPlayerForAds();
-                injectAdBlockScripts();
-            }, 500); // Monitor every 500ms
-        }
-
-        // Block ad elements in DOM
-        function blockAdElements() {
-            try {
-                const adSelectors = [
-                    '.ad', '.ads', '.advertisement', '[class*="ad-"]',
-                    '[id*="ad-"]', '.video-ad', '.ytp-ad-',
-                    '.ytp-ad-module', '.ytp-ad-player-overlay'
-                ];
-                
-                adSelectors.forEach(selector => {
-                    const elements = document.querySelectorAll(selector);
-                    elements.forEach(el => {
-                        if (el && el.parentNode) {
-                            el.parentNode.removeChild(el);
-                            console.log('🧹 Removed ad element:', selector);
-                        }
-                    });
-                });
-
-                // Also block any iframes from ad domains
-                const iframes = document.querySelectorAll('iframe');
-                iframes.forEach(iframe => {
-                    const src = iframe.src || '';
-                    if (blockedDomains.some(domain => src.includes(domain))) {
-                        iframe.remove();
-                        console.log('🚫 Removed ad iframe');
-                    }
-                });
-            } catch (e) {
-                // Silent fail for cross-origin issues
-            }
-        }
-
-        // Monitor player for ad states
-        function monitorPlayerForAds() {
-            if (!player) return;
-
-            try {
-                const currentTime = player.getCurrentTime();
-                const duration = player.getDuration();
-                const state = player.getPlayerState();
-
-                // Detect potential ad by unusual video length or playback behavior
-                if (duration > 0 && duration < 120 && state === YT.PlayerState.PLAYING) {
-                    console.log('⚠️ Short video detected - potential ad');
-                    showAdDetection();
-                }
-
-                // Monitor for ad-related playback issues
-                if (state === YT.PlayerState.CUED || state === YT.PlayerState.BUFFERING) {
-                    setTimeout(() => {
-                        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
-                            console.log('⚠️ Playback stuck - potential ad');
-                            showAdDetection();
-                        }
-                    }, 2000);
-                }
-            } catch (e) {
-                // Silent fail
-            }
-        }
-
-        // Inject additional ad-blocking scripts
-        function injectAdBlockScripts() {
-            // This would be more comprehensive in a real extension
-            // For now, we'll use a simple script injection approach
-            const script = document.createElement('script');
-            script.textContent = `
-                // Additional ad-blocking measures
-                console.log('🛡️ Additional ad-blocking active');
-            `;
-            document.head.appendChild(script);
-        }
-
-        // Show ad detection overlay
-        function showAdDetection() {
-            const overlay = document.getElementById('adDetectionOverlay');
-            overlay.style.display = 'block';
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 2000);
-        }
+        let adDetectedCount = 0;
+        let isAdPlaying = false;
 
         // This function is called by the YouTube API when it's ready
         function onYouTubeIframeAPIReady() {
@@ -659,7 +492,8 @@
                     'playsinline': 1,
                     'controls': 0,
                     'modestbranding': 1,
-                    'rel': 0
+                    'rel': 0,
+                    'iv_load_policy': 3 // Disable annotations
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -670,11 +504,11 @@
         }
 
         function onPlayerReady(event) {
-            console.log("Player is ready - Aggressive ad blocking activated");
+            console.log("Player is ready");
             document.getElementById('progressContainer').addEventListener('click', seekToPosition);
             
-            // Initialize aggressive ad blocking
-            initializeAdBlocking();
+            // Start ad monitoring
+            startAdMonitoring();
         }
 
         function onPlayerStateChange(event) {
@@ -728,6 +562,79 @@
                     return "The owner of this video does not allow it to be played on this website.";
                 default:
                     return "An unknown error occurred while playing this video.";
+            }
+        }
+
+        // Ad blocking functionality
+        function startAdMonitoring() {
+            // Check for ads every 500ms
+            adBlockInterval = setInterval(checkForAds, 500);
+        }
+
+        function checkForAds() {
+            if (!player || !player.getPlayerState) return;
+            
+            const playerState = player.getPlayerState();
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            
+            // Detect ads based on various indicators
+            let adDetected = false;
+            
+            // Method 1: Check for unskippable ads (state 2 is buffering, which often happens before ads)
+            if (playerState === YT.PlayerState.BUFFERING && currentTime === 0 && !isAdPlaying) {
+                adDetected = true;
+            }
+            
+            // Method 2: Check if video is unusually short (many ads are 15-30 seconds)
+            if (duration > 0 && duration < 35 && !isAdPlaying) {
+                adDetected = true;
+            }
+            
+            // Method 3: Check for video title changes that might indicate ads
+            if (player.getVideoData && player.getVideoData().title) {
+                const title = player.getVideoData().title.toLowerCase();
+                if ((title.includes('ad') || title.includes('commercial') || title.includes('sponsor')) && !isAdPlaying) {
+                    adDetected = true;
+                }
+            }
+            
+            // Method 4: Check if player is in CUED state but not playing (often indicates ad)
+            if (playerState === YT.PlayerState.CUED && !isPlaying && !isAdPlaying) {
+                adDetected = true;
+            }
+            
+            // If ad is detected, skip it
+            if (adDetected) {
+                adDetectedCount++;
+                isAdPlaying = true;
+                document.getElementById('adBlockText').textContent = `Ad blocked (${adDetectedCount} total)`;
+                document.getElementById('adBlockIndicator').style.display = 'block';
+                
+                console.log("Ad detected, skipping...");
+                
+                // Try multiple methods to skip the ad
+                
+                // Method 1: Try to skip using the YouTube player API
+                if (player.seekTo && duration) {
+                    player.seekTo(duration, true);
+                }
+                
+                // Method 2: Try to play the video at the end to trigger next
+                if (player.playVideo) {
+                    player.playVideo();
+                }
+                
+                // Method 3: If all else fails, skip to next video
+                setTimeout(() => {
+                    if (isAdPlaying) {
+                        console.log("Ad still playing, skipping to next video");
+                        playNextVideo();
+                        isAdPlaying = false;
+                    }
+                }, 1000);
+            } else {
+                isAdPlaying = false;
             }
         }
 
@@ -868,9 +775,11 @@
             searchResults = [];
             blockedVideos = [];
             currentVideoIndex = 0;
+            adDetectedCount = 0;
             document.getElementById('playlistItems').innerHTML = '<div class="loading">Search for music to populate the playlist</div>';
             document.getElementById('nowPlaying').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('adBlockIndicator').style.display = 'none';
             if (player && player.stopVideo) {
                 player.stopVideo();
             }
@@ -887,6 +796,7 @@
 
             document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching YouTube...</div>';
             document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('adBlockIndicator').style.display = 'none';
 
             try {
                 // Search for videos using YouTube Data API
@@ -1036,4 +946,5 @@
         });
     </script>
 </body>
+
 </html>
