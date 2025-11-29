@@ -481,6 +481,7 @@
         let adBlockInterval;
         let adDetectedCount = 0;
         let isAdPlaying = false;
+        let lastVideoTime = 0;
 
         // This function is called by the YouTube API when it's ready
         function onYouTubeIframeAPIReady() {
@@ -493,7 +494,11 @@
                     'controls': 0,
                     'modestbranding': 1,
                     'rel': 0,
-                    'iv_load_policy': 3 // Disable annotations
+                    'iv_load_policy': 3, // Disable annotations
+                    'fs': 0, // Disable fullscreen button
+                    'disablekb': 1, // Disable keyboard controls
+                    'enablejsapi': 1,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -507,7 +512,7 @@
             console.log("Player is ready");
             document.getElementById('progressContainer').addEventListener('click', seekToPosition);
             
-            // Start ad monitoring
+            // Start aggressive ad monitoring
             startAdMonitoring();
         }
 
@@ -565,55 +570,73 @@
             }
         }
 
-        // Ad blocking functionality
+        // Advanced ad blocking functionality
         function startAdMonitoring() {
-            // Check for ads every 500ms
-            adBlockInterval = setInterval(checkForAds, 500);
+            // Check for ads every 100ms for maximum effectiveness
+            adBlockInterval = setInterval(aggressiveAdBlock, 100);
         }
 
-        function checkForAds() {
+        function aggressiveAdBlock() {
             if (!player || !player.getPlayerState) return;
             
             const playerState = player.getPlayerState();
             const currentTime = player.getCurrentTime();
             const duration = player.getDuration();
             
-            // Detect ads based on various indicators
+            // Multiple detection methods for ads
             let adDetected = false;
+            let skipMethod = "none";
             
             // Method 1: Check for unskippable ads (state 2 is buffering, which often happens before ads)
             if (playerState === YT.PlayerState.BUFFERING && currentTime === 0 && !isAdPlaying) {
                 adDetected = true;
+                skipMethod = "buffering_detection";
             }
             
             // Method 2: Check if video is unusually short (many ads are 15-30 seconds)
             if (duration > 0 && duration < 35 && !isAdPlaying) {
                 adDetected = true;
+                skipMethod = "short_duration";
             }
             
-            // Method 3: Check for video title changes that might indicate ads
+            // Method 3: Check if time is not progressing (stuck in ad)
+            if (playerState === YT.PlayerState.PLAYING && currentTime === lastVideoTime && lastVideoTime > 0) {
+                adDetected = true;
+                skipMethod = "time_stuck";
+            }
+            
+            // Method 4: Check for video title changes that might indicate ads
             if (player.getVideoData && player.getVideoData().title) {
                 const title = player.getVideoData().title.toLowerCase();
-                if ((title.includes('ad') || title.includes('commercial') || title.includes('sponsor')) && !isAdPlaying) {
+                const adKeywords = ['ad', 'advertisement', 'commercial', 'sponsor', 'promo'];
+                if (adKeywords.some(keyword => title.includes(keyword)) && !isAdPlaying) {
                     adDetected = true;
+                    skipMethod = "title_detection";
                 }
             }
             
-            // Method 4: Check if player is in CUED state but not playing (often indicates ad)
+            // Method 5: Check for player state inconsistencies
             if (playerState === YT.PlayerState.CUED && !isPlaying && !isAdPlaying) {
                 adDetected = true;
+                skipMethod = "state_inconsistency";
             }
             
-            // If ad is detected, skip it
+            // Method 6: Check for unusual playback behavior
+            if (playerState === YT.PlayerState.PLAYING && currentTime < 1 && duration < 60) {
+                adDetected = true;
+                skipMethod = "playback_behavior";
+            }
+            
+            // If ad is detected, use aggressive methods to remove it
             if (adDetected) {
                 adDetectedCount++;
                 isAdPlaying = true;
-                document.getElementById('adBlockText').textContent = `Ad blocked (${adDetectedCount} total)`;
+                document.getElementById('adBlockText').textContent = `Ad blocked (${adDetectedCount} total) - Method: ${skipMethod}`;
                 document.getElementById('adBlockIndicator').style.display = 'block';
                 
-                console.log("Ad detected, skipping...");
+                console.log(`Ad detected (${skipMethod}), removing...`);
                 
-                // Try multiple methods to skip the ad
+                // Use multiple methods to skip the ad
                 
                 // Method 1: Try to skip using the YouTube player API
                 if (player.seekTo && duration) {
@@ -625,16 +648,35 @@
                     player.playVideo();
                 }
                 
-                // Method 3: If all else fails, skip to next video
+                // Method 3: Try to stop and reload the video
+                setTimeout(() => {
+                    if (isAdPlaying && player.stopVideo) {
+                        player.stopVideo();
+                    }
+                }, 200);
+                
+                // Method 4: If all else fails, skip to next video
                 setTimeout(() => {
                     if (isAdPlaying) {
                         console.log("Ad still playing, skipping to next video");
                         playNextVideo();
                         isAdPlaying = false;
                     }
-                }, 1000);
+                }, 500);
             } else {
                 isAdPlaying = false;
+                lastVideoTime = currentTime;
+            }
+            
+            // Additional protection: If video is playing but time hasn't changed in 2 seconds, force skip
+            if (playerState === YT.PlayerState.PLAYING && currentTime === lastVideoTime && lastVideoTime > 0) {
+                setTimeout(() => {
+                    const newTime = player.getCurrentTime();
+                    if (newTime === lastVideoTime) {
+                        console.log("Video appears stuck, skipping...");
+                        playNextVideo();
+                    }
+                }, 2000);
             }
         }
 
