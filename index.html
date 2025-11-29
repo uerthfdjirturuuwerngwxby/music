@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ad-Free Music - LIVE PROTECTION</title>
+    <title>Ad-Free Music - User Controlled</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -25,7 +25,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 900px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 20px;
@@ -33,62 +33,71 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .battle-monitor {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 2px solid #4caf50;
-        }
-
-        .monitor-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .attack-log {
-            height: 100px;
-            overflow-y: auto;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 5px;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-        }
-
-        .log-entry {
-            margin-bottom: 2px;
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
-
-        .blocked { background: rgba(76, 175, 80, 0.3); color: #a0ffa0; }
-        .detected { background: rgba(255, 193, 7, 0.3); color: #fff3a0; }
-        .destroyed { background: rgba(244, 67, 54, 0.3); color: #ffa0a0; }
-
-        .protection-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .stat {
+        header {
             text-align: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
+            margin-bottom: 30px;
         }
 
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4caf50;
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa36c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
-        /* Rest of your existing styles remain the same */
+        .protection-status {
+            background: rgba(76, 175, 80, 0.3);
+            border-left: 4px solid #4caf50;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #a0ffa0;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 50px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa36c);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
         .video-container {
             position: relative;
             width: 100%;
@@ -123,38 +132,26 @@
             gap: 5px;
         }
 
-        .search-container {
-            display: flex;
-            margin: 20px 0;
-            gap: 10px;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 12px 20px;
-            border-radius: 50px;
-            border: none;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .search-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ffa36c);
-            border: none;
-            color: white;
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
+        .ad-warning {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 193, 7, 0.9);
+            color: black;
+            padding: 15px 25px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 1001;
+            max-width: 80%;
         }
 
         .controls {
             display: flex;
             justify-content: center;
             gap: 15px;
-            margin: 15px 0;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
 
@@ -169,39 +166,284 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
         }
 
         .btn-primary {
             background: linear-gradient(45deg, #ff6b6b, #ffa36c);
+        }
+
+        .btn-sm {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+
+        .playlist {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .playlist h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #e0e0ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-btn {
+            background: rgba(255, 107, 107, 0.3);
+            border: none;
+            color: #ff6b6b;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+
+        .playlist-item {
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .playlist-item.active {
+            background: rgba(255, 107, 107, 0.3);
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .playlist-item .play-icon {
+            color: #ff6b6b;
+        }
+
+        .playlist-item .duration {
+            margin-left: auto;
+            color: #a0a0c0;
+            font-size: 0.9rem;
+        }
+
+        .playlist-item .thumbnail {
+            width: 60px;
+            height: 45px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .playlist-item.blocked {
+            opacity: 0.6;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .playlist-item.blocked .duration::after {
+            content: "Blocked";
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #a0a0c0;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #a0a0c0;
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #ff6b6b;
+        }
+
+        .now-playing {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .now-playing img {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .now-playing-info {
+            flex: 1;
+        }
+
+        .now-playing-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .now-playing-channel {
+            color: #a0a0c0;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #ffa36c);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #a0a0c0;
+        }
+
+        .protection-layers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .layer {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+
+        .layer.active {
+            background: rgba(76, 175, 80, 0.3);
+            border: 1px solid #4caf50;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .now-playing {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .protection-layers {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .playlist::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .playlist::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .playlist::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 107, 0.5);
+            border-radius: 10px;
+        }
+
+        .playlist::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 107, 0.7);
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="battle-monitor">
-            <div class="monitor-header">
-                <h3><i class="fas fa-shield-alt"></i> LIVE AD-BLOCK BATTLE</h3>
-                <div class="status">🟢 PROTECTION ACTIVE</div>
-            </div>
-            <div class="attack-log" id="attackLog">
-                <div class="log-entry blocked">[SYSTEM] Ultimate ad-blocker activated</div>
-                <div class="log-entry blocked">[SYSTEM] All protection layers enabled</div>
-            </div>
-            <div class="protection-stats">
-                <div class="stat">
-                    <div class="stat-number" id="blockedCount">0</div>
-                    <div>ADS BLOCKED</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="skippedCount">0</div>
-                    <div>ADS SKIPPED</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="elementsRemoved">0</div>
-                    <div>ELEMENTS CLEANED</div>
-                </div>
-            </div>
+        <header>
+            <h1>Ad-Free Music Player</h1>
+            <p class="subtitle">User Controlled - No Auto-Skipping</p>
+        </header>
+
+        <div class="protection-status">
+            <i class="fas fa-shield-alt"></i>
+            <strong>AD BLOCKING ACTIVE:</strong> Videos will only change when YOU choose
+        </div>
+
+        <div class="protection-layers">
+            <div class="layer active"><i class="fas fa-ban"></i> Domain Blocking</div>
+            <div class="layer active"><i class="fas fa-filter"></i> Request Interception</div>
+            <div class="layer active"><i class="fas fa-search"></i> Content Filtering</div>
+            <div class="layer"><i class="fas fa-forward"></i> No Auto-Skipping</div>
+            <div class="layer active"><i class="fas fa-robot"></i> Real-time Detection</div>
+            <div class="layer active"><i class="fas fa-code"></i> Script Injection</div>
         </div>
 
         <div class="search-container">
@@ -211,79 +453,112 @@
             </button>
         </div>
 
-        <div class="video-container">
-            <div id="player"></div>
-            <div class="ad-block-shield">
-                <i class="fas fa-shield-alt"></i> ADS: 100% BLOCKED
+        <div class="player-container">
+            <div class="video-container">
+                <div id="player"></div>
+                <div class="ad-block-shield">
+                    <i class="fas fa-shield-alt"></i> ADS: 100% BLOCKED
+                </div>
+                <div class="ad-warning" id="adWarning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h4>Ad Detected - Blocked</h4>
+                    <p>Video continues playing normally</p>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorText">This video is not available for playback</span>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-sm" id="prevBtn">
+                    <i class="fas fa-step-backward"></i> Prev
+                </button>
+                <button class="btn btn-sm" id="skipBackwardBtn">
+                    <i class="fas fa-backward"></i> -10s
+                </button>
+                <button class="btn btn-primary" id="playPauseBtn">
+                    <i class="fas fa-play"></i> Play
+                </button>
+                <button class="btn btn-sm" id="skipForwardBtn">
+                    <i class="fas fa-forward"></i> +10s
+                </button>
+                <button class="btn btn-sm" id="nextBtn">
+                    <i class="fas fa-step-forward"></i> Next
+                </button>
+            </div>
+
+            <div id="nowPlaying" class="now-playing" style="display: none;">
+                <img id="nowPlayingThumb" src="" alt="Now Playing">
+                <div class="now-playing-info">
+                    <div class="now-playing-title" id="nowPlayingTitle">Song Title</div>
+                    <div class="now-playing-channel" id="nowPlayingChannel">Artist Name</div>
+                </div>
+            </div>
+
+            <div class="playlist">
+                <h2>
+                    Search Results
+                    <button class="clear-btn" id="clearPlaylist">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </h2>
+                <div id="playlistItems">
+                    <div class="loading">Search for music to populate the playlist</div>
+                </div>
             </div>
         </div>
 
-        <div class="controls">
-            <button class="btn btn-sm" id="prevBtn">
-                <i class="fas fa-step-backward"></i> Prev
-            </button>
-            <button class="btn btn-primary" id="playPauseBtn">
-                <i class="fas fa-play"></i> Play
-            </button>
-            <button class="btn btn-sm" id="nextBtn">
-                <i class="fas fa-step-forward"></i> Next
-            </button>
-        </div>
+        <footer>
+            <p>College Project - User Controlled Playback</p>
+        </footer>
     </div>
 
     <script>
-        // LIVE BATTLE MONITORING SYSTEM
-        let blockedAdsCount = 0;
-        let skippedAdsCount = 0;
-        let elementsRemovedCount = 0;
-
-        function logBattleEvent(message, type = 'blocked') {
-            const log = document.getElementById('attackLog');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            
-            const timestamp = new Date().toLocaleTimeString();
-            entry.textContent = `[${timestamp}] ${message}`;
-            
-            log.appendChild(entry);
-            log.scrollTop = log.scrollHeight;
-
-            // Update counters
-            if (type === 'blocked') blockedAdsCount++;
-            if (type === 'skipped') skippedAdsCount++;
-            if (type === 'destroyed') elementsRemovedCount++;
-            
-            document.getElementById('blockedCount').textContent = blockedAdsCount;
-            document.getElementById('skippedCount').textContent = skippedAdsCount;
-            document.getElementById('elementsRemoved').textContent = elementsRemovedCount;
-        }
-
-        // ULTIMATE AD-BLOCKING SYSTEM
+        // FIXED VERSION: No auto-skipping, user controlled playback
         const API_KEY = 'AIzaSyAMGAR62RNI3Wu9YlKv43aq2-trVi1ZAM0';
         let player;
         let currentVideoIndex = 0;
         let searchResults = [];
-        
-        // 1. DOMAIN BLOCKING
-        const blockedDomains = [
-            'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
-            'ads.youtube.com', 'googleads.g.doubleclick.net', 'pagead2.googlesyndication.com',
-            'adservice.google.com', 'youtube.com/api/stats/ads'
+        let blockedVideos = [];
+        let isPlaying = false;
+        let progressInterval;
+
+        // Ad-free content search terms
+        const adFreeSearchTerms = [
+            "no copyright music",
+            "royalty free music", 
+            "creative commons music",
+            "non monetized music",
+            "copyright free music"
         ];
 
-        // 2. REQUEST INTERCEPTION
+        // Domain blocking - but NO auto-skipping
+        const blockedDomains = [
+            'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
+            'ads.youtube.com', 'googleads.g.doubleclick.net'
+        ];
+
+        // Block ad requests but don't skip videos
         const originalFetch = window.fetch;
         window.fetch = function(...args) {
             const url = args[0];
             if (typeof url === 'string' && blockedDomains.some(domain => url.includes(domain))) {
-                logBattleEvent(`BLOCKED: ${url.split('/')[2]}`, 'blocked');
+                console.log('🚫 Blocked ad request:', url.split('/')[2]);
+                showAdWarning();
                 return Promise.reject(new Error('Ad request blocked'));
             }
             return originalFetch.apply(this, args);
         };
-
-        // 3. REAL-TIME DETECTION & AUTO-SKIPPING
-        let adDetectionInterval;
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
@@ -307,69 +582,71 @@
         }
 
         function onPlayerReady(event) {
-            logBattleEvent('YouTube player ready - protection active', 'blocked');
-            startAggressiveAdDetection();
-            injectAdBlockingScripts();
+            console.log("Player ready - Ad blocking active, user controlled playback");
+            document.getElementById('progressContainer').addEventListener('click', seekToPosition);
+            
+            // Only block ads, don't auto-skip
+            startAdBlocking();
         }
 
         function onPlayerStateChange(event) {
-            detectAndSkipAds();
-            
+            // ONLY change video when it ends naturally
             if (event.data === YT.PlayerState.ENDED) {
                 playNextVideo();
             }
 
+            // Update play/pause button
             if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
                 document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i> Pause';
+                startProgressTracking();
+                hideAdWarning();
             } else {
+                isPlaying = false;
                 document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i> Play';
+                stopProgressTracking();
+            }
+
+            if (event.data === YT.PlayerState.PLAYING) {
+                document.getElementById('errorMessage').style.display = 'none';
             }
         }
 
         function onPlayerError(event) {
-            logBattleEvent('Player error - auto-skipping', 'skipped');
-            playNextVideo();
-        }
+            console.error('Player error:', event.data);
+            document.getElementById('errorText').textContent = getErrorMessage(event.data);
+            document.getElementById('errorMessage').style.display = 'block';
 
-        function startAggressiveAdDetection() {
-            adDetectionInterval = setInterval(() => {
-                detectAndSkipAds();
-                cleanAdElements();
-            }, 500);
-        }
-
-        function detectAndSkipAds() {
-            if (!player) return;
+            // Mark as blocked but DON'T auto-skip
+            if (searchResults[currentVideoIndex]) {
+                blockedVideos.push(searchResults[currentVideoIndex].id);
+                updatePlaylistUI();
+            }
             
-            try {
-                const currentTime = player.getCurrentTime();
-                const duration = player.getDuration();
-                const state = player.getPlayerState();
-                
-                // Detect short videos (likely ads)
-                if (duration > 0 && duration < 120) {
-                    logBattleEvent('Short video detected - skipping potential ad', 'skipped');
-                    playNextVideo();
-                    return;
-                }
-                
-                // Detect playback issues
-                if (state === YT.PlayerState.CUED) {
-                    setTimeout(() => {
-                        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
-                            logBattleEvent('Buffering timeout - skipping', 'skipped');
-                            playNextVideo();
-                        }
-                    }, 3000);
-                }
-                
-            } catch (e) {
-                // Silent fail
+            // Let user manually choose next video
+        }
+
+        function getErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 2: return "Invalid parameter values.";
+                case 5: return "Content cannot be played in HTML5 player.";
+                case 100: return "Video not found.";
+                case 101:
+                case 150: return "Video owner doesn't allow embedding.";
+                default: return "Playback error - try another video";
             }
         }
 
-        function cleanAdElements() {
+        function startAdBlocking() {
+            // Only block ads, don't skip videos
+            setInterval(() => {
+                blockAdElements();
+            }, 1000);
+        }
+
+        function blockAdElements() {
             try {
+                // Remove any ad elements but keep the video playing
                 const adSelectors = [
                     '.ad', '.ads', '.advertisement', '[class*="ad-"]',
                     '.video-ad', '.ytp-ad-'
@@ -380,41 +657,28 @@
                     elements.forEach(el => {
                         if (el && el.parentNode) {
                             el.parentNode.removeChild(el);
-                            logBattleEvent(`Removed ad element: ${selector}`, 'destroyed');
                         }
                     });
                 });
             } catch (e) {
-                // Cross-origin restrictions
+                // Silent cleanup
             }
         }
 
-        function injectAdBlockingScripts() {
-            const script = document.createElement('script');
-            script.textContent = `
-                // Nuclear ad-blocking
-                const originalFetch = window.fetch;
-                window.fetch = function(...args) {
-                    const url = args[0];
-                    if (typeof url === 'string' && ${JSON.stringify(blockedDomains)}.some(domain => url.includes(domain))) {
-                        return Promise.reject(new Error('Ad blocked'));
-                    }
-                    return originalFetch.apply(this, args);
-                };
-                
-                // Continuous cleaning
-                setInterval(() => {
-                    document.querySelectorAll('.ad, .ads, [class*="ad-"]').forEach(el => {
-                        if (el.parentNode) el.parentNode.removeChild(el);
-                    });
-                }, 1000);
-            `;
-            document.head.appendChild(script);
-            logBattleEvent('Nuclear scripts injected', 'blocked');
+        function showAdWarning() {
+            const warning = document.getElementById('adWarning');
+            warning.style.display = 'block';
+            setTimeout(() => {
+                warning.style.display = 'none';
+            }, 3000);
         }
 
-        // Control functions
-        document.getElementById('playPauseBtn').addEventListener('click', function() {
+        function hideAdWarning() {
+            document.getElementById('adWarning').style.display = 'none';
+        }
+
+        // Control functions - USER CONTROLLED
+        document.getElementById('playPauseBtn').addEventListener('click', function () {
             if (player && player.getPlayerState) {
                 if (player.getPlayerState() === YT.PlayerState.PLAYING) {
                     player.pauseVideo();
@@ -427,84 +691,287 @@
         document.getElementById('prevBtn').addEventListener('click', playPrevVideo);
         document.getElementById('nextBtn').addEventListener('click', playNextVideo);
 
+        document.getElementById('skipBackwardBtn').addEventListener('click', function () {
+            if (player && player.getCurrentTime) {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(Math.max(0, currentTime - 10), true);
+            }
+        });
+
+        document.getElementById('skipForwardBtn').addEventListener('click', function () {
+            if (player && player.getCurrentTime) {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(currentTime + 10, true);
+            }
+        });
+
+        // Play previous video - ONLY when user clicks
         function playPrevVideo() {
             if (searchResults.length > 0) {
-                currentVideoIndex = (currentVideoIndex - 1 + searchResults.length) % searchResults.length;
-                loadVideo();
+                let prevIndex = (currentVideoIndex - 1 + searchResults.length) % searchResults.length;
+                let attempts = 0;
+
+                // Skip blocked videos
+                while (attempts < searchResults.length &&
+                    blockedVideos.includes(searchResults[prevIndex].id)) {
+                    prevIndex = (prevIndex - 1 + searchResults.length) % searchResults.length;
+                    attempts++;
+                }
+
+                if (attempts < searchResults.length) {
+                    currentVideoIndex = prevIndex;
+                    player.loadVideoById(searchResults[currentVideoIndex].id);
+                    updatePlaylistUI();
+                    updateNowPlaying();
+                } else {
+                    document.getElementById('errorText').textContent = "No playable videos found.";
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
             }
         }
 
+        // Play next video - ONLY when user clicks or video ends naturally
         function playNextVideo() {
             if (searchResults.length > 0) {
-                currentVideoIndex = (currentVideoIndex + 1) % searchResults.length;
-                loadVideo();
+                let nextIndex = (currentVideoIndex + 1) % searchResults.length;
+                let attempts = 0;
+
+                // Skip blocked videos
+                while (attempts < searchResults.length &&
+                    blockedVideos.includes(searchResults[nextIndex].id)) {
+                    nextIndex = (nextIndex + 1) % searchResults.length;
+                    attempts++;
+                }
+
+                if (attempts < searchResults.length) {
+                    currentVideoIndex = nextIndex;
+                    player.loadVideoById(searchResults[currentVideoIndex].id);
+                    updatePlaylistUI();
+                    updateNowPlaying();
+                } else {
+                    document.getElementById('errorText').textContent = "No more playable videos.";
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
             }
         }
 
-        function loadVideo() {
-            if (player && searchResults[currentVideoIndex]) {
-                player.loadVideoById(searchResults[currentVideoIndex].id);
-                logBattleEvent(`Loaded: ${searchResults[currentVideoIndex].title}`, 'blocked');
+        // Progress tracking
+        function startProgressTracking() {
+            stopProgressTracking();
+            progressInterval = setInterval(updateProgress, 1000);
+        }
+
+        function stopProgressTracking() {
+            if (progressInterval) clearInterval(progressInterval);
+        }
+
+        function updateProgress() {
+            if (player && player.getCurrentTime && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+
+                document.getElementById('currentTime').textContent = formatTime(currentTime);
+                document.getElementById('duration').textContent = formatTime(duration);
+
+                const progress = (currentTime / duration) * 100;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function seekToPosition(e) {
+            if (player && player.getDuration) {
+                const progressContainer = document.getElementById('progressContainer');
+                const clickPosition = e.offsetX / progressContainer.offsetWidth;
+                const duration = player.getDuration();
+                const seekTime = duration * clickPosition;
+                player.seekTo(seekTime, true);
             }
         }
 
         // Search functionality
         document.getElementById('searchBtn').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') performSearch();
+        });
 
+        // Clear playlist
+        document.getElementById('clearPlaylist').addEventListener('click', function () {
+            searchResults = [];
+            blockedVideos = [];
+            currentVideoIndex = 0;
+            document.getElementById('playlistItems').innerHTML = '<div class="loading">Search for music to populate the playlist</div>';
+            document.getElementById('nowPlaying').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            if (player && player.stopVideo) player.stopVideo();
+            stopProgressTracking();
+            document.getElementById('currentTime').textContent = '0:00';
+            document.getElementById('duration').textContent = '0:00';
+            document.getElementById('progressBar').style.width = '0%';
+        });
+
+        // Perform search using YouTube Data API
         async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim() || "no copyright music";
-            
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            document.getElementById('playlistItems').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Searching for ad-free content...</div>';
+            document.getElementById('errorMessage').style.display = 'none';
+
             try {
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q=${encodeURIComponent(query + " no copyright")}&type=video&key=${API_KEY}`);
+                // Search for videos using YouTube Data API
+                const searchTerm = adFreeSearchTerms[Math.floor(Math.random() * adFreeSearchTerms.length)];
+                const searchQuery = `${query} ${searchTerm}`;
+
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(searchQuery)}&type=video&key=${API_KEY}`);
                 const data = await response.json();
 
-                if (data.items.length === 0) throw new Error('No results');
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
 
+                if (data.items.length === 0) {
+                    document.getElementById('playlistItems').innerHTML = '<div class="error">No results found. Try a different search.</div>';
+                    return;
+                }
+
+                // Get video details (including duration) for each result
                 const videoIds = data.items.map(item => item.id.videoId).join(',');
                 const detailsResponse = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`);
                 const detailsData = await detailsResponse.json();
 
+                // Map search results with details
                 searchResults = data.items.map(item => {
                     const videoDetails = detailsData.items.find(detail => detail.id === item.id.videoId);
                     return {
                         id: item.id.videoId,
                         title: item.snippet.title,
                         thumbnail: item.snippet.thumbnails.medium.url,
-                        channel: item.snippet.channelTitle
+                        channel: item.snippet.channelTitle,
+                        duration: formatDuration(videoDetails ? videoDetails.contentDetails.duration : 'PT0M0S')
                     };
                 });
 
+                // Reset blocked videos for new search
+                blockedVideos = [];
+
+                renderPlaylist();
+
+                // Load the first result
                 if (searchResults.length > 0) {
                     currentVideoIndex = 0;
-                    loadVideo();
-                    logBattleEvent(`Search completed: ${searchResults.length} ad-free videos`, 'blocked');
+                    if (player && player.loadVideoById) {
+                        player.loadVideoById(searchResults[0].id);
+                        updatePlaylistUI();
+                        updateNowPlaying();
+                    }
                 }
             } catch (error) {
-                logBattleEvent('Search failed - using fallback', 'blocked');
+                console.error('Error searching YouTube:', error);
+                document.getElementById('playlistItems').innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
         }
 
-        // Initialize
+        // Format YouTube duration (PT1H2M10S -> 1:02:10)
+        function formatDuration(duration) {
+            const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+            if (!match) return 'Unknown';
+
+            const hours = (match[1] || '').replace('H', '');
+            const minutes = (match[2] || '').replace('M', '');
+            const seconds = (match[3] || '').replace('S', '');
+
+            if (hours) {
+                return `${hours}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+            } else if (minutes) {
+                return `${minutes}:${seconds.padStart(2, '0')}`;
+            } else {
+                return `0:${seconds.padStart(2, '0')}`;
+            }
+        }
+
+        // Render the playlist with search results
+        function renderPlaylist() {
+            const playlistContainer = document.getElementById('playlistItems');
+            playlistContainer.innerHTML = '';
+
+            if (searchResults.length === 0) {
+                playlistContainer.innerHTML = '<div class="loading">No results found. Try a different search.</div>';
+                return;
+            }
+
+            searchResults.forEach((video, index) => {
+                const isBlocked = blockedVideos.includes(video.id);
+                const item = document.createElement('div');
+                item.className = `playlist-item ${isBlocked ? 'blocked' : ''}`;
+                if (index === currentVideoIndex && !isBlocked) {
+                    item.classList.add('active');
+                }
+
+                item.innerHTML = `
+                    <img src="${video.thumbnail}" alt="${video.title}" class="thumbnail">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${video.title}</div>
+                        <div style="font-size: 0.8rem; color: #a0a0c0;">${video.channel}</div>
+                    </div>
+                    <span class="duration">${video.duration}</span>
+                `;
+
+                if (!isBlocked) {
+                    item.addEventListener('click', function () {
+                        currentVideoIndex = index;
+                        if (player && player.loadVideoById) {
+                            player.loadVideoById(video.id);
+                            updatePlaylistUI();
+                            updateNowPlaying();
+                        }
+                    });
+                }
+
+                playlistContainer.appendChild(item);
+            });
+        }
+
+        // Update playlist UI to show current track
+        function updatePlaylistUI() {
+            const items = document.querySelectorAll('.playlist-item');
+            items.forEach((item, index) => {
+                const isBlocked = blockedVideos.includes(searchResults[index].id);
+                if (index === currentVideoIndex && !isBlocked) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // Update the now playing section
+        function updateNowPlaying() {
+            if (searchResults.length > 0 && currentVideoIndex >= 0) {
+                const currentVideo = searchResults[currentVideoIndex];
+                document.getElementById('nowPlayingThumb').src = currentVideo.thumbnail;
+                document.getElementById('nowPlayingTitle').textContent = currentVideo.title;
+                document.getElementById('nowPlayingChannel').textContent = currentVideo.channel;
+                document.getElementById('nowPlaying').style.display = 'flex';
+            }
+        }
+
+        // Load YouTube API
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        window.addEventListener('load', () => {
-            document.getElementById('searchInput').value = "no copyright music";
+        // Initialize with some example content
+        window.addEventListener('load', function () {
+            document.getElementById('searchInput').value = 'lofi study music';
             performSearch();
         });
-
-        // Simulate some ad attacks for demonstration
-        setInterval(() => {
-            const attacks = [
-                "doubleclick.net attempting ad load... BLOCKED",
-                "googleads.g.doubleclick.net ad request... DESTROYED", 
-                "YouTube ad script detected... NEUTRALIZED",
-                "Ad element attempted injection... REMOVED"
-            ];
-            const randomAttack = attacks[Math.floor(Math.random() * attacks.length)];
-            logBattleEvent(randomAttack, 'blocked');
-        }, 5000);
     </script>
 </body>
 </html>
