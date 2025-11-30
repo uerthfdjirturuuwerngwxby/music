@@ -40,6 +40,14 @@
             <p class="subtitle">Enhanced ad-blocking for uninterrupted music</p>
         </header>
 
+        <!-- API Key Status -->
+        <div class="api-status">
+            <div class="api-status-badge">
+                <i class="fas fa-check-circle"></i>
+                <span>YouTube API Key: Loaded</span>
+            </div>
+        </div>
+
         <div class="search-container">
             <input type="text" class="search-input" id="searchInput" placeholder="Search for music..." value="lofi study music">
             <button class="search-btn" id="searchBtn">
@@ -99,7 +107,9 @@
                     </button>
                 </h2>
                 <div id="playlistItems">
-                    <div class="loading">Search for music to populate the playlist</div>
+                    <div class="loading" id="initialMessage">
+                        <i class="fas fa-spinner fa-spin"></i> Loading music...
+                    </div>
                 </div>
             </div>
         </div>
