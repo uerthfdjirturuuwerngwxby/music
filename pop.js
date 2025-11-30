@@ -1,44 +1,20 @@
-// Popup script for the ad-blocker extension
-
-document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.getElementById('toggleBlocking');
-    const viewDetails = document.getElementById('viewDetails');
-    
-    // Load current blocking status
-    chrome.storage.local.get(['isBlockingEnabled'], function(result) {
-        const isEnabled = result.isBlockingEnabled !== false;
-        toggle.checked = isEnabled;
-    });
-    
-    // Toggle blocking
-    toggle.addEventListener('change', function() {
-        const isEnabled = this.checked;
-        chrome.storage.local.set({ isBlockingEnabled: isEnabled });
-        
-        // Send message to all tabs to update blocking status
-        chrome.tabs.query({}, function(tabs) {
-            tabs.forEach(tab => {
-                chrome.tabs.sendMessage(tab.id, {
-                    action: "setBlockingStatus",
-                    enabled: isEnabled
-                });
-            });
-        });
-    });
-    
-    // View details
-    viewDetails.addEventListener('click', function() {
-        chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
-    });
-    
-    // Update statistics (this would need to communicate with content scripts)
-    function updateStats() {
-        // In a real extension, you would get these from the background script
-        // or content scripts via messaging
-        document.getElementById('domCount').textContent = 'N/A';
-        document.getElementById('networkCount').textContent = 'N/A';
-        document.getElementById('scriptCount').textContent = 'N/A';
-    }
-    
-    updateStats();
-});
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { width: 300px; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+        .header { text-align: center; margin-bottom: 15px; }
+        .status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+        button { width: 100%; padding: 10px; margin-top: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h3>Music Player</h3>
+        <p>Ad-Blocking Enabled</p>
+    </div>
+    <button id="openPlayer">Open Music Player</button>
+    <script src="popup.js"></script>
+</body>
+</html>
