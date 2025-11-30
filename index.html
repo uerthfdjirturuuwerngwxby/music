@@ -3,163 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Ad-Blocking Techniques</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Ad-Free YouTube Music Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
+        <!-- Ad-Blocking Status Panel -->
+        <div class="adblock-panel">
+            <div class="adblock-header">
+                <i class="fas fa-shield-alt"></i>
+                <span>Ad-Block Protection</span>
+                <div class="adblock-status">
+                    <span class="status-indicator active"></span>
+                    <span>Active</span>
+                </div>
+            </div>
+            <div class="adblock-stats">
+                <div class="stat">
+                    <span class="stat-number" id="statDom">0</span>
+                    <span class="stat-label">DOM Blocks</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="statNetwork">0</span>
+                    <span class="stat-label">Network Blocks</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="statScripts">0</span>
+                    <span class="stat-label">Script Blocks</span>
+                </div>
+            </div>
+        </div>
+
         <header>
-            <h1>Advanced Ad-Blocking Techniques</h1>
-            <p class="subtitle">JavaScript Implementation for Educational Purposes</p>
+            <h1>Ad-Free YouTube Music Player</h1>
+            <p class="subtitle">Enhanced ad-blocking for uninterrupted music</p>
         </header>
 
-        <div class="dashboard">
-            <div class="card">
-                <h2><i class="fas fa-shield-alt"></i> Protection Status</h2>
-                <div class="status-item">
-                    <span class="status-name">DOM Filtering</span>
-                    <span class="status-value status-active" id="statusDom">Active</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-name">Network Interception</span>
-                    <span class="status-value status-active" id="statusNetwork">Active</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-name">Mutation Observer</span>
-                    <span class="status-value status-active" id="statusMutation">Active</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-name">Script Overriding</span>
-                    <span class="status-value status-active" id="statusScript">Active</span>
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search for music..." value="lofi study music">
+            <button class="search-btn" id="searchBtn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+
+        <div class="player-container">
+            <div class="video-container">
+                <div id="player"></div>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorText">This video is not available for playback</span>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-sm" id="prevBtn">
+                    <i class="fas fa-step-backward"></i> Prev
+                </button>
+                <button class="btn btn-sm" id="skipBackwardBtn">
+                    <i class="fas fa-backward"></i> -10s
+                </button>
+                <button class="btn btn-primary" id="playPauseBtn">
+                    <i class="fas fa-play"></i> Play
+                </button>
+                <button class="btn btn-sm" id="skipForwardBtn">
+                    <i class="fas fa-forward"></i> +10s
+                </button>
+                <button class="btn btn-sm" id="nextBtn">
+                    <i class="fas fa-step-forward"></i> Next
+                </button>
+            </div>
+
+            <div id="nowPlaying" class="now-playing" style="display: none;">
+                <img id="nowPlayingThumb" src="" alt="Now Playing">
+                <div class="now-playing-info">
+                    <div class="now-playing-title" id="nowPlayingTitle">Song Title</div>
+                    <div class="now-playing-channel" id="nowPlayingChannel">Artist Name</div>
                 </div>
             </div>
 
-            <div class="card">
-                <h2><i class="fas fa-chart-bar"></i> Blocking Statistics</h2>
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="statDom">0</div>
-                        <div class="stat-label">DOM Elements</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="statNetwork">0</div>
-                        <div class="stat-label">Network Requests</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="statScripts">0</div>
-                        <div class="stat-label">Script Blocks</div>
-                    </div>
+            <div class="playlist">
+                <h2>
+                    Search Results
+                    <button class="clear-btn" id="clearPlaylist">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </h2>
+                <div id="playlistItems">
+                    <div class="loading">Search for music to populate the playlist</div>
                 </div>
             </div>
         </div>
 
-        <div class="techniques">
-            <div class="tech-card">
-                <h3><i class="fas fa-code"></i> DOM Filtering</h3>
-                <p>Removes ad elements based on CSS selectors and attributes.</p>
-                <div class="code-block">
-// CSS-based ad removal
-const adSelectors = [
-    '[class*="ad"]', '[id*="ad"]',
-    '[class*="banner"]', '.ads', '.ad-container'
-];
-adSelectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => {
-        if (!isEssentialElement(el)) el.remove();
-    });
-});
-                </div>
+        <!-- Ad-Blocking Logs -->
+        <div class="adblock-logs">
+            <h3><i class="fas fa-list-alt"></i> Protection Logs</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">Ad-blocking system ready. No ads will be displayed.</div>
             </div>
-
-            <div class="tech-card">
-                <h3><i class="fas fa-network-wired"></i> Network Interception</h3>
-                <p>Intercepts and blocks requests to known ad servers.</p>
-                <div class="code-block">
-// Fetch interception
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-    const url = args[0];
-    if (isAdServer(url)) {
-        logBlock('Network', url);
-        return Promise.reject(new Error('Ad request blocked'));
-    }
-    return originalFetch.apply(this, args);
-};
-                </div>
-            </div>
-
-            <div class="tech-card">
-                <h3><i class="fas fa-eye"></i> Mutation Observer</h3>
-                <p>Watches for dynamically inserted ad elements.</p>
-                <div class="code-block">
-// Watch for new elements
-const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-            if (node.nodeType === 1 && isAdElement(node)) {
-                node.remove();
-                logBlock('DOM', 'Dynamic ad');
-            }
-        });
-    });
-});
-observer.observe(document.body, config);
-                </div>
-            </div>
-
-            <div class="tech-card">
-                <h3><i class="fas fa-cogs"></i> Script Overriding</h3>
-                <p>Overrides ad-related JavaScript functions.</p>
-                <div class="code-block">
-// Override ad functions
-const originalAppend = Element.prototype.appendChild;
-Element.prototype.appendChild = function(node) {
-    if (isAdScript(node)) {
-        logBlock('Script', 'Ad script');
-        return node; // Don't execute
-    }
-    return originalAppend.call(this, node);
-};
-                </div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button class="btn btn-primary" id="startBlocking">
-                <i class="fas fa-play"></i> Start Protection
-            </button>
-            <button class="btn btn-secondary" id="stopBlocking">
-                <i class="fas fa-stop"></i> Stop Protection
-            </button>
-            <button class="btn btn-secondary" id="clearLogs">
-                <i class="fas fa-trash"></i> Clear Logs
-            </button>
-            <button class="btn btn-secondary" id="testAds">
-                <i class="fas fa-vial"></i> Test Ad Detection
-            </button>
-        </div>
-
-        <div class="log-container" id="logContainer">
-            <div class="log-entry">Ad-blocker initialized. Ready to start protection.</div>
-        </div>
-
-        <!-- Test Ad Elements (for demonstration) -->
-        <div class="test-ad-section">
-            <h3>Test Ad Elements (Will be blocked when protection is active)</h3>
-            <div class="ad-banner test-ad">Test Advertisement Banner</div>
-            <div class="sponsored-content test-ad">Sponsored Content</div>
-            <div id="ad-container" class="test-ad">Ad Container</div>
         </div>
 
         <footer>
-            <p>Educational Implementation - Advanced Ad-Blocking Techniques &copy; 2023</p>
-            <p style="font-size: 0.8rem; margin-top: 10px;">
-                This is for educational purposes only. Use responsibly and respect website terms of service.
-            </p>
+            <p>Ad-Free YouTube Music Player &copy; 2023 | Enhanced Ad-Blocking Technology</p>
         </footer>
     </div>
 
-    <script src="content.js"></script>
+    <!-- YouTube API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="adblock.js"></script>
+    <script src="player.js"></script>
 </body>
 </html>
