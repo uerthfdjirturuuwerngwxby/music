@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .stats {
+            margin-top: 15px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h3>Ad Blocker</h3>
+        <p>Advanced blocking techniques</p>
+    </div>
+    
+    <div class="status">
+        <span>Ad Blocking</span>
+        <label class="switch">
+            <input type="checkbox" id="toggleBlocking" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <span>DOM Elements Blocked:</span>
+            <span id="domCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span>Network Requests Blocked:</span>
+            <span id="networkCount">0</span>
+        </div>
+        <div class="stat-item">
+            <span>Scripts Blocked:</span>
+            <span id="scriptCount">0</span>
+        </div>
+    </div>
+    
+    <button id="viewDetails">View Details</button>
+    
+    <script src="popup.js"></script>
+</body>
+</html>
